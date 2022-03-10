@@ -1,0 +1,35 @@
+{
+  "error": "Exception: The parameters (null) don't match the method signature for CardService.TimePicker.setHours. [line: 44, function: build_widget_input_meeting_duration, file: interface_settings_card]",
+  "error2":"Exception: The parameters (null) don't match the method signature for CardService.TimePicker.setHours. [line: 54, function: build_widget_input_available_hours_start, file: interface_settings_card]",
+  "email": "andthenbeyond@gmail.com",
+  "load_event": 5,
+  "first_connection": "2022-03-09T15:47:15.130Z",
+  "last_connection": "2022-03-10T14:52:27.220Z",
+  "dotw": {
+    "Mon": false,
+    "Tue": false,
+    "Wed": false,
+    "Thu": false,
+    "Fri": false,
+    "Sat": false,
+    "Sun": false
+  },
+  "duration": 30,
+  "date_frame": {
+    "start": "2022-03-09T15:47:15.130Z",
+    "end": "2022-03-16T15:47:15.130Z"
+  },
+  "hour_frame": {
+    "start": 1646784000000,
+    "end": 1647388800000
+  },
+  "guest_status": {
+    "OWNER": false,
+    "YES": false,
+    "NO": false,
+    "MAYBE": false,
+    "INVITED": false,
+    "yes": true,
+    "maybe": true
+  }
+}

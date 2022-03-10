@@ -22,7 +22,7 @@ function build_card_settings(){
     return CardService.newDatePicker()
       .setTitle("Evaluate from")
       .setFieldName("evaluate_from")
-      .setValueInMsSinceEpoch(new Date().getTime())
+      .setValueInMsSinceEpoch(new Date(user_settings.date_frame.start).getTime())
       .setOnChangeAction(CardService.newAction()
           .setFunctionName("settings_data_handler"));
   }
@@ -31,7 +31,7 @@ function build_card_settings(){
     return CardService.newDatePicker()
       .setTitle("to")
       .setFieldName("evaluate_to")
-      .setValueInMsSinceEpoch((new Date().getTime()+(1000*60*60*24*7)))
+      .setValueInMsSinceEpoch(new Date(user_settings.date_frame.end).getTime())
       .setOnChangeAction(CardService.newAction()
           .setFunctionName("settings_data_handler"));
   
@@ -103,32 +103,7 @@ function build_card_settings(){
   
     return checkboxGroup
   }
-  
-
-  function build_widget_input_blocking_calendars(user_settings){
-    /*
-      TODO: Consider removing this alltogether and working only with what
-      calendars are selected on the window the add on is attached to,
-      this because we dont know yet how to get an active hook when the user
-      selects or unselects an item, making it impossible to coordinate 2 way
-      however we can just ask on any query for the selected calendars
-    */
-    let checkboxGroup = CardService.newSelectionInput()
-      .setType(CardService.SelectionInputType.CHECK_BOX)
-      .setTitle("Considereded Calendars")
-      .setFieldName("considered_calendars")
-  
-    for (let calendar_id in user_settings.calendars) {
-      let one = user_settings.calendars[calendar_id]
-      checkboxGroup.addItem(one.name, one.id, one.selected)
-    }
-  
-    checkboxGroup.setOnChangeAction(CardService.newAction()
-    .setFunctionName("settings_data_handler"))
-  
-    return checkboxGroup
-  }
-  
+    
   function build_widget_target_timezone(){
     /*
       Shift this to script properties storage as the data source for all
@@ -145,5 +120,5 @@ function build_card_settings(){
     .setFieldName("target_timezone")
     .setSuggestions(suggestions)
     .setOnChangeAction(CardService.newAction()
-    .setFunctionName("settings_data_handler"))
+    .setFunctionName("still_under_dev"))
   }

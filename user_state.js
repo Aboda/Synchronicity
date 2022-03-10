@@ -17,7 +17,7 @@
 function state_fetch_or_create_user(){
     let mem_fetch = fetch_user_property("user_settings")
     let user_settings
-    if (mem_fetch === null || mem_fetch === {}) {
+    if (mem_fetch.email === undefined) {
       user_settings = current_user_settings_default()
       save_user_property("user_settings",user_settings)
     }else{
@@ -35,6 +35,7 @@ function state_fetch_or_create_user(){
 */
 function current_user_settings_default(){
     let user_settings = {}
+    user_settings.version = "0.0.1 Reconstruction of webapp features"
     user_settings.email = Session.getActiveUser().getEmail()
     user_settings.load_event = 1
     user_settings.first_connection = new Date()

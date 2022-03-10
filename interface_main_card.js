@@ -62,7 +62,7 @@ function build_item_button_refresh(){
 }
 
 function build_item_button_settings(){
-  return cards_text_button("delete user Settings","build_card_settings")
+  return cards_text_button("Query Settings","build_card_settings")
 }
 
 /*

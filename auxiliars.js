@@ -16,6 +16,14 @@ function general_cb_handler(data_received){
 }
 
 /*
+  Development tool, shows a message that indicates than that feature
+  is under development
+*/
+function still_under_dev()  {
+  card_quick_feedback("That feature is still under development!")
+}
+
+/*
   General cards feedback tool, used for short messages that appear at the bottom
   of the cards interface as brief semi transparent banners
 */
