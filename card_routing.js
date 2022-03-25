@@ -1,8 +1,8 @@
 /*
     Builds the main card client at the begining of the application launch
 */
-function workspace_add_on() {
-    return build_card_main(state_fetch_or_create_user())
+function workspace_add_on(e) {
+    return build_card_main(state_fetch_or_create_user(e))
 }
 
 /*

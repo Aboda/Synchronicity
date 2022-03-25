@@ -6,7 +6,8 @@
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar",
     "https://www.googleapis.com/auth/calendar.addons.execute",
-    "https://www.googleapis.com/auth/userinfo.profile"
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/script.locale"
   ],
   "runtimeVersion": "V8",
   "webapp": {
@@ -22,7 +23,8 @@
       },
       "homepageTrigger": {
         "runFunction": "workspace_add_on"
-      }
+      },
+      "useLocaleFromApp":true
     },
     "calendar": {
       "eventOpenTrigger": {

@@ -37,50 +37,50 @@ function build_widget_output_main(user_settings){
   .addWidget(build_main_output(user_settings))
   .addWidget(
     CardService.newButtonSet()
-      .addButton(build_item_button_copy())
       .addButton(build_item_button_refresh())
       .addButton(build_item_button_settings())
+      .addButton(build_item_button_display())
+      .addButton(build_item_button_delete())
   );
 }
 
-/*
-  TODO: This function must create the totality of the cycle text output. 
-*/
-function build_main_output(user_settings){
-  return CardService.newTextParagraph().setText("This is a placeholder for main output")
-}
+
 
 /*
   This is the text buttons creation
 */
-function build_item_button_copy(){
-  return cards_text_button("delete user settings","delete_user_settings")
-}
 
 function build_item_button_refresh(){
-  return cards_text_button("show user memory","show_user_memory")
+  return cards_text_button("Refresh","interface_action_refresh_output")
 }
 
 function build_item_button_settings(){
-  return cards_text_button("Query Settings","build_card_settings")
+  return cards_text_button("Settings","build_card_settings")
 }
+
+/*
+  These are dev buttons
+*/
+
+function build_item_button_delete(){
+  return cards_text_button("delete mem","delete_user_settings")
+}
+
+function build_item_button_display(){
+  return cards_text_button("show mem","show_user_memory")
+}
+
+
 
 /*
   Here the actions enabled by each button
 */
 
-function interface_action_copy_output(e) {
-  /*
-    It seems that there is no way to interact with the clipboard from a Card
-    pending research into alternate solutions (no custom javascript and no
-    specific feature that does this).
-  */
-  return card_quick_feedback("Still researching if feature is possible")
-}
-
 function interface_action_refresh_output(e) {
   /*
     This seems easily doable as it will only mean a restart of the cycle
   */
-  return card_quick_feedback("Pending implementation of main output cycle")
+
+  let user_settings = state_fetch_or_create_user(e)
+  return build_card_main(user_settings)
 }

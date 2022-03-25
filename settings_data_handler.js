@@ -54,10 +54,13 @@ function settings_data_handler(data_received){
   }
   
   function settings_translate_timezone(user_settings,data_received) {
-    /*
-      TODO: We require to enable a function that differentiates the daylights
-      savings time. this year range is Sun, Mar 13, 2022 – Sun, Nov 6, 2022
-    */
+    if (data_received.formInput.target_timezone != undefined){
+      user_settings.target_timezone = data_received.formInput.target_timezone
+      user_settings.appropiate_offset = search_offset(data_received.formInput.target_timezone)
+    }else{
+      user_settings.target_timezone = data_received.userTimezone.id
+      user_settings.appropiate_offset = from_ms_to_offset_hours(data_received.userTimezone.offSet)
+    } 
   }
 
 function settings_translate_guest_status(user_settings,data_received) {

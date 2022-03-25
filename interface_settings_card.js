@@ -1,6 +1,6 @@
 
 function build_card_settings(){
-    let user_settings = fetch_user_property("user_settings")
+    let user_settings = rez_settings()
     
     let inputs_section = CardService.newCardSection()
       .setHeader("Settings")
@@ -22,7 +22,7 @@ function build_card_settings(){
     return CardService.newDatePicker()
       .setTitle("Evaluate from")
       .setFieldName("evaluate_from")
-      .setValueInMsSinceEpoch(new Date(user_settings.date_frame.start).getTime())
+      .setValueInMsSinceEpoch(user_settings.date_frame.start.getTime())
       .setOnChangeAction(CardService.newAction()
           .setFunctionName("settings_data_handler"));
   }
@@ -31,7 +31,7 @@ function build_card_settings(){
     return CardService.newDatePicker()
       .setTitle("to")
       .setFieldName("evaluate_to")
-      .setValueInMsSinceEpoch(new Date(user_settings.date_frame.end).getTime())
+      .setValueInMsSinceEpoch(user_settings.date_frame.end.getTime())
       .setOnChangeAction(CardService.newAction()
           .setFunctionName("settings_data_handler"));
   
@@ -104,7 +104,7 @@ function build_card_settings(){
     return checkboxGroup
   }
     
-  function build_widget_target_timezone(){
+  function build_widget_target_timezone(user_settings){
     /*
       Shift this to script properties storage as the data source for all
       calculations regarding offsets among serviced clients.
@@ -112,6 +112,8 @@ function build_card_settings(){
     let options = state_fetch_or_create_timezones_table()
     
     let suggestions = CardService.newSuggestions()
+    suggestions.addSuggestion(user_settings.script_user_timezone)
+
     for (let zones of options){
       suggestions.addSuggestion(zones[0])
     }
@@ -119,6 +121,7 @@ function build_card_settings(){
     .setTitle("Target Timezone")
     .setFieldName("target_timezone")
     .setSuggestions(suggestions)
+    .setHint(user_settings.target_timezone)
     .setOnChangeAction(CardService.newAction()
-    .setFunctionName("still_under_dev"))
+    .setFunctionName("settings_data_handler"))
   }
