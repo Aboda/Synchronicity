@@ -1,5 +1,5 @@
 
-function build_card_settings(){
+function build_card_settings(e){
     let user_settings = rez_settings()
     
     let inputs_section = CardService.newCardSection()
@@ -18,6 +18,7 @@ function build_card_settings(){
     .addSection(inputs_section)
     .build();
   }
+
   function build_widget_input_evaluate_from_date(user_settings){
     return CardService.newDatePicker()
       .setTitle("Evaluate from")

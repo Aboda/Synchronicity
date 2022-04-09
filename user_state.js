@@ -16,8 +16,9 @@
 
 function state_fetch_or_create_user(e){
     let mem_fetch = fetch_user_property("user_settings")
+    if(mem_fetch == null){mem_fetch = {}}
     let user_settings = {}
-    if (mem_fetch.email === undefined) {
+    if (mem_fetch.email == undefined) {
       user_settings = current_user_settings_default(e)
     }else{
       user_settings = mem_fetch
@@ -98,10 +99,10 @@ function current_user_settings_default(e){
         }
     }
     user_settings.guest_status = {
-        "OWNER":false,
+        "OWNER":true,
         "YES":true,
         "NO":false,
-        "MAYBE":true,
+        "MAYBE":false,
         "INVITED":false
     }
     if (e != undefined){

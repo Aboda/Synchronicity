@@ -2,12 +2,19 @@
   TODO: This function must create the totality of the cycle text output. 
 */
 function build_main_output(user_settings){
-    let events_from_visible_calendars = check_calendars(
-        user_settings.date_frame.start,
-        user_settings.date_frame.end
-    )
-    let text_output = do_the_thing(events_from_visible_calendars,user_settings)
-    return CardService.newTextParagraph().setText(text_output)
+  let cal_object = get_calendars()
+  user_settings.available_calendars = cal_object.names
+  let events_from_visible_calendars = check_calendars(
+    user_settings.date_frame.start,
+    user_settings.date_frame.end,
+    cal_object.calendars
+  )
+  user_settings.evaluated_events = Object.keys(events_from_visible_calendars).length
+  user_settings.events_from_visible_calendars = events_from_visible_calendars
+  let text_output = do_the_thing(events_from_visible_calendars,user_settings)
+  user_settings.output = text_output
+  save_user_property("last_report",user_settings)
+  return CardService.newTextParagraph().setText(text_output)
 }
 
 /*
@@ -16,12 +23,19 @@ function build_main_output(user_settings){
     automated call at query execution so that only the visible calendars are
     considered as blocking 03/08/2022
 */
-function get_not_hidden_calendars(){
+function get_calendars(){
     let calendars = CalendarApp.getAllCalendars()
-    let processed = {}
+    let processed = {
+      "names":{
+        "hidden":{},
+        "visible":{}
+      },
+      "calendars":[]
+    }
     for (let calendar of calendars){
         if (!calendar.isHidden()) {
-            processed[calendar.getId()] = calendar
+            processed.calendars[calendar.getId()] = calendar
+            processed.names.visible[calendar.getId()] = calendar.getName()
             /*
 
             informational 
@@ -36,16 +50,16 @@ function get_not_hidden_calendars(){
               "primary":calendar.isMyPrimaryCalendar()
             }
             */
+        }else{
+          processed.names.hidden[calendar.getId()] = calendar.getName()
         }
     }
     return processed
 }
 
-function check_calendars(start_date,end_date) {
+function check_calendars(start_date,end_date,cal_object) {
   try{
-    let cal_object = get_not_hidden_calendars()
     let reminder = {}
-
     for (let cal_id in cal_object) {
     let cal = cal_object[cal_id]
     let events_in_range = cal.getEvents(start_date,end_date)
@@ -105,9 +119,10 @@ function do_the_thing(events_from_visible_calendars,user_settings){
       these are calculated from local time, offset is applied
       only on output
   */
-
-  if (user_settings.date_frame.start > user_settings.date_frame.end) {
-    user_settings.date_frame.start = what_day_is_tomorrow(),
+  let tomorrow = what_day_is_tomorrow()
+  if (user_settings.date_frame.start > user_settings.date_frame.end || 
+    user_settings.date_frame.start < tomorrow) {
+    user_settings.date_frame.start = tomorrow,
     user_settings.date_frame.end = what_day_is_a_week_from_tomorrow()
     save_user_property("user_settings",user_settings)
   }
@@ -133,11 +148,12 @@ function do_the_thing(events_from_visible_calendars,user_settings){
   }
 
   let eval_date_number = date_array.length
-
+  user_settings.number_of_days = eval_date_number
+  user_settings.date_array = date_array
   /*
     Step 2:
       for each date, we will derive a timeframe to compare,
-      this controlled by the appropiate filter on the page
+      this is controlled by the appropiate filter in settings
   */
   let specific_timeframe_array = []
   let start_hour = user_settings.hour_frame.start.hours
@@ -149,6 +165,7 @@ function do_the_thing(events_from_visible_calendars,user_settings){
   for (let dates of date_array) {
     specific_timeframe_array.push([dates.getTime()+start_miliseconds,dates.getTime()+end_miliseconds])
   }
+  user_settings.specific_timeframe_array = specific_timeframe_array
 
   /*
     Step 3:
@@ -164,6 +181,7 @@ function do_the_thing(events_from_visible_calendars,user_settings){
     }
     slotted_timeframe_array.push(truearray)
   }
+  user_settings.slotted_timeframe_array = slotted_timeframe_array
   /*
     Step 4:
       now we can run the cycle for each required day!
@@ -197,7 +215,7 @@ function do_the_thing(events_from_visible_calendars,user_settings){
     let dt = user_settings.weekdays[offset_date.getDay()] + " " + (offset_date.getMonth()+1) + "/" + offset_date.getDate()
     to = to + dt
     /*
-      Second and pontentially most most expensive loop under an scenario of too many events
+      Second and pontentially most expensive loop under an scenario of too many events
     */
     let matched_events = 0
     for (let event_id in events_from_visible_calendars) {
@@ -205,33 +223,31 @@ function do_the_thing(events_from_visible_calendars,user_settings){
       /*
         This checks that the status of the calendar in blocking events is true
         if so, it proceeds, else it skips
-
-        Also commit_pass handles the guest participation status filter
       */
+      if (user_settings.guest_status[events.status]) {
 
-        if (user_settings.guest_status[events.status]) {
-        /*
+      /*
         This checks if the event timeframe intersects with the day evaluated timeframe
         with (or) over the two (ands) answers the question:
         
         ¿Do start or end time fall within the evaluated timeframe?
       */
         if (
-          events.epoch[0] > spef_tf[0] && events.epoch[0] < spef_tf[1] ||
-          events.epoch[1] > spef_tf[0] && events.epoch[1] < spef_tf[1]
+          events.startTime > spef_tf[0] && events.startTime < spef_tf[1] ||
+          events.endTime > spef_tf[0] && events.endTime < spef_tf[1]
           ) {
             matched_events++
             /*
               TODO: Explain later
             */
-          let event_start_distance_to_timeframe_start = events.epoch[0] - spef_tf[0]
-          let event_end_distance_to_timeframe_start = events.epoch[1] - spef_tf[0]
+          let event_start_distance_to_timeframe_start = events.startTime - spef_tf[0]
+          let event_end_distance_to_timeframe_start = events.endTime - spef_tf[0]
           if (event_start_distance_to_timeframe_start > 0) {
             /*
               Standard case, the event began within the revised timeframe
               tag_minute_array(array_to_tag,array_moment_0,epoch_start,epoch_end)
             */
-            tag_minute_array(slot_tf,spef_tf[0],events.epoch[0],events.epoch[1])
+            tag_minute_array(slot_tf,spef_tf[0],events.startTime,events.endTime)
           }else{
             /*
               The event started before the start time and ends within its timeframe
@@ -243,7 +259,7 @@ function do_the_thing(events_from_visible_calendars,user_settings){
               So this case stars from moment 0 of evaluation and blocks all time until
               the end time of that event
             */
-            tag_pre_start(slot_tf,spef_tf[0],events.epoch[1])
+            tag_pre_start(slot_tf,spef_tf[0],events.endTime)
           }
         }
       }        
@@ -290,7 +306,7 @@ function do_the_thing(events_from_visible_calendars,user_settings){
         /*check if accumulated progress satisfies minimum desired minutes*/
         if (progress_counter >= desired_meeting_duration) {
             assembled_packs++
-            to = to + write_available_timeframe(spef_tf[0],last_start_index,action_index,action_index,false)
+            to = to + write_available_timeframe(spef_tf[0],last_start_index,action_index,action_index,false,my_clock)
             last_start_index = action_index
         }
         /*slot is unavailable*/
@@ -370,3 +386,45 @@ function write_available_timeframe(
         return number
       }
     }
+
+ /*Tags a timeframe unavailable in a slot array*/
+ function tag_minute_array(array_to_tag,array_moment_0,epoch_start,epoch_end){
+  /*
+    this is the moment in which the minute 0 of the event begins
+  */
+  let block_1_epoch = epoch_start - array_moment_0
+  /*
+    this is the index in the slotted time array where to start
+    if all tags play nice and it is always divisible to a minute as it should be
+    it should always be divisible for by 60000, if this provides a non natural number
+    it wont work, we can do modulo, but I would like to know the scenarios that merit it
+  */
+  let block_1_index = block_1_epoch / 60000
+  /*
+    This counts the amount of blocks by dividing among ms in a second
+  */
+  let number_of_blocks = (epoch_end - epoch_start) / 60000
+  /*
+    While we have calculated the size of the events these might be longer
+    than the expected timeframe
+    we tag the memory slot now
+  */
+  let sought_size = array_to_tag.length
+  for (let i = 0;i < number_of_blocks && i + block_1_index < sought_size; i++) {
+    array_to_tag[i+block_1_index] = false
+  }
+}
+
+/*Tags unavailable slots from pos 0 until given epoch*/
+function tag_pre_start (array_to_tag,array_moment_0,epoch_end){
+  /*
+    This function blocks when the event started before the spotted timeframe
+  */
+  let difference = epoch_end - array_moment_0
+  let number_of_blocks = (difference) / 60000
+  let sought_size = array_to_tag.length
+
+  for (let i = 0;i < number_of_blocks && i < sought_size; i++) {
+    array_to_tag[i] = false
+  }
+}

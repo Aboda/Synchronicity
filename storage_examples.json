@@ -1,10 +1,11 @@
 {
-  "user_settings": {
+  "user_settings_good":
+  {
     "version": "0.0.1 Reconstruction of webapp features",
     "email": "andthenbeyond@gmail.com",
     "load_event": 1,
-    "first_connection": "2022-03-24T15:08:02.016Z",
-    "last_connection": "2022-03-24T15:08:02.016Z",
+    "first_connection": "2022-03-25T15:16:04.805Z",
+    "last_connection": "2022-03-25T15:16:04.805Z",
     "weekdays": [
       "Sun",
       "Mon",
@@ -53,8 +54,8 @@
       "minutes": 30
     },
     "date_frame": {
-      "start": "2022-03-24T15:08:02.016Z",
-      "end": "2022-03-31T15:08:02.017Z"
+      "start": "2022-03-26T06:00:00.000Z",
+      "end": "2022-04-01T06:00:00.000Z"
     },
     "hour_frame": {
       "start": {
@@ -73,27 +74,169 @@
       "MAYBE": true,
       "INVITED": false
     },
-    "target_offset": 11,
-    "calling_event": {
-      "calendar": {},
-      "hostApp": "calendar",
-      "userCountry": "GB",
-      "userTimezone": {
-        "id": "America/Mexico_City",
-        "offSet": "-21600000"
+    "target_timezone": "America/Mexico_City",
+    "appropiate_offset": -6,
+    "script_user_timezone": "America/Mexico_City",
+    "script_user_offset": -21600000
+  },
+  "user_settings_bad":{
+    "version": "0.0.1 Reconstruction of webapp features",
+    "email": "andthenbeyond@gmail.com",
+    "load_event": 3,
+    "first_connection": "2022-03-25T15:16:04.805Z",
+    "last_connection": "2022-03-25T15:27:21.533Z",
+    "weekdays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "tz": [
+      "-11",
+      "-10",
+      "-9",
+      "-8",
+      "-7",
+      "-6",
+      "-5",
+      "-4",
+      "-3",
+      "-2",
+      "-1",
+      "0",
+      "+1",
+      "+2",
+      "+3",
+      "+4",
+      "+5",
+      "+6",
+      "+7",
+      "+8",
+      "+9",
+      "+10",
+      "+11"
+    ],
+    "dotw": {
+      "Mon": true,
+      "Tue": true,
+      "Wed": true,
+      "Thu": true,
+      "Fri": true,
+      "Sat": false,
+      "Sun": false
+    },
+    "duration": {
+      "hours": 2,
+      "minutes": 0
+    },
+    "date_frame": {
+      "start": "2022-03-26T00:00:00.000Z",
+      "end": "2022-04-01T00:00:00.000Z"
+    },
+    "hour_frame": {
+      "start": {
+        "hours": 9,
+        "minutes": 0
       },
-      "userLocale": "en",
-      "commonEventObject": {
-        "platform": "WEB",
-        "userLocale": "en-GB",
-        "timeZone": {
-          "offset": -21600000,
-          "id": "America/Mexico_City"
-        },
-        "hostApp": "CALENDAR"
+      "end": {
+        "hours": 17,
+        "minutes": 0
+      }
+    },
+    "guest_status": {
+      "OWNER": false,
+      "YES": true,
+      "NO": false,
+      "MAYBE": true,
+      "INVITED": false
+    },
+    "target_timezone": "America/Mexico_City",
+    "appropiate_offset": -6,
+    "script_user_timezone": "America/Mexico_City",
+    "script_user_offset": -21600000
+  },
+  "user_settings_bad2":
+  {
+    "version": "0.0.1 Reconstruction of webapp features",
+    "email": "andthenbeyond@gmail.com",
+    "load_event": 4,
+    "first_connection": "2022-03-25T15:43:59.368Z",
+    "last_connection": "2022-03-26T16:47:33.427Z",
+    "weekdays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "tz": [
+      "-11",
+      "-10",
+      "-9",
+      "-8",
+      "-7",
+      "-6",
+      "-5",
+      "-4",
+      "-3",
+      "-2",
+      "-1",
+      "0",
+      "+1",
+      "+2",
+      "+3",
+      "+4",
+      "+5",
+      "+6",
+      "+7",
+      "+8",
+      "+9",
+      "+10",
+      "+11"
+    ],
+    "dotw": {
+      "Mon": true,
+      "Tue": true,
+      "Wed": true,
+      "Thu": true,
+      "Fri": true,
+      "Sat": false,
+      "Sun": true
+    },
+    "duration": {
+      "hours": 0,
+      "minutes": 30
+    },
+    "date_frame": {
+      "start": "2022-03-26T00:00:00.000Z",
+      "end": "2022-04-01T00:00:00.000Z"
+    },
+    "hour_frame": {
+      "start": {
+        "hours": 9,
+        "minutes": 0
       },
-      "clientPlatform": "web"
-    }
+      "end": {
+        "hours": 17,
+        "minutes": 0
+      }
+    },
+    "guest_status": {
+      "OWNER": false,
+      "YES": true,
+      "NO": false,
+      "MAYBE": true,
+      "INVITED": false
+    },
+    "target_timezone": "America/Mexico_City",
+    "appropiate_offset": -6,
+    "script_user_timezone": "America/Mexico_City",
+    "script_user_offset": -21600000
   },
   "events_from_visible_calendars": {
     "2e14in37vq638vces1msmd6kco@google.com": {

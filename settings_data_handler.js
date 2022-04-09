@@ -14,7 +14,7 @@
 */
 
 function settings_data_handler(data_received){
-    let user_settings = fetch_user_property("user_settings")
+    let user_settings = state_fetch_or_create_user(data_received)
     settings_translate_dotw(user_settings,data_received)
     settings_translate_duration(user_settings,data_received)
     settings_translate_date_frame(user_settings,data_received)

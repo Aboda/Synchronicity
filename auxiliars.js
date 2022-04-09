@@ -91,7 +91,7 @@ function what_day_is_a_week_from_tomorrow(){
   let a_week_from_tomorrow = 
   new Date(
     new Date().getTime() + 
-    (get_a_day_in_ms()*7)
+    (get_a_day_in_ms()*8)
   )
   let that_day_start = new Date(a_week_from_tomorrow.getFullYear(),a_week_from_tomorrow.getMonth(),a_week_from_tomorrow.getDate())
   return that_day_start
@@ -100,8 +100,6 @@ function what_day_is_a_week_from_tomorrow(){
 /*
   this fetches user settings and updates the JSON representation of the date range to be a javascript date object.
 */
-
-
 function rez_settings(){
   user_settings = fetch_user_property("user_settings")
   user_settings.date_frame.start = new Date(user_settings.date_frame.start)
