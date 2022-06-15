@@ -46,14 +46,6 @@ function cards_text_button(button_text,attached_function_name){
 }
 
 /*
-  for time calculations
-*/
-
-function get_a_day_in_ms(){
-  return 24 * 60 * 60 * 1000
-}
-
-/*
   This year (2022) daylight savings range is: Sun, Mar 13, 2022 – Sun, Nov 6, 2022
 */
 function is_it_savings_time(){
@@ -76,28 +68,6 @@ function from_ms_to_offset_hours(asnumber){
 }
 
 /*
-  This returns a date element with tomorrows 00:00 hours epoch time
-*/
-function what_day_is_tomorrow(){
-  let a_day_from_now = new Date(new Date().getTime() + get_a_day_in_ms())
-  let that_day_start = new Date(a_day_from_now.getFullYear(),a_day_from_now.getMonth(),a_day_from_now.getDate())
-  return that_day_start
-}
-
-/*
-  This returns a date element with a 7 days from today
-*/
-function what_day_is_a_week_from_tomorrow(){
-  let a_week_from_tomorrow = 
-  new Date(
-    new Date().getTime() + 
-    (get_a_day_in_ms()*8)
-  )
-  let that_day_start = new Date(a_week_from_tomorrow.getFullYear(),a_week_from_tomorrow.getMonth(),a_week_from_tomorrow.getDate())
-  return that_day_start
-}
-
-/*
   this fetches user settings and updates the JSON representation of the date range to be a javascript date object.
 */
 function rez_settings(){
@@ -105,4 +75,28 @@ function rez_settings(){
   user_settings.date_frame.start = new Date(user_settings.date_frame.start)
   user_settings.date_frame.end = new Date(user_settings.date_frame.end)
   return user_settings
+}
+
+
+/*
+  Used to extract the emails of contacts from the Apps Script provided object
+*/
+function list_contacts_emails(contacts_object){
+  let global_email_array = []
+  for (let contact of contacts_object){
+    let item_email_array = contact.getEmailAddresses()
+    for (let email of item_email_array) {
+      global_email_array.push(email)
+    }
+  }
+  return global_email_array
+}
+
+function calculate_browser_to_target_offset(user_settings){
+  /*
+    Offset distance is the difference between the browser timezone and the one
+    selected for the output,
+  */
+  user_settings.offset_distance = local_utc_offset() - user_settings.target_offset
+  user_settings.offset_as_ms = from_UTC_to_ms(user_settings.offset_distance)
 }

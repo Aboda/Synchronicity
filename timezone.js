@@ -37,11 +37,9 @@ function state_fetch_or_create_timezones_table(){
   ]
 }
 
-function search_offset(zone_name){
-
-  let user_settings = fetch_user_property("user_settings")
+function search_offset(zone_name,user_settings){
   if (zone_name == user_settings.script_user_timezone) {
-    return from_ms_to_offset_hours(user_settings.script_user_offset)
+    return user_settings.script_user_offset
   }
   let tz_table = state_fetch_or_create_timezones_table()
   for (let i = 0; i < tz_table.length; i++) {
@@ -61,12 +59,3 @@ function read_time(timestring){
   let significant = timestring.split(":")[0]
   return Number(significant)
 }
-
-/* 
-  TODO: This takes the standard TZ names and writes them down to the user preferred
-  format
-*/
-function standard_to_user_preference_transformer(){
-
-}
-

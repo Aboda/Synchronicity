@@ -5,12 +5,17 @@
 
     script:
       tz_table
-        a small list of USA cities from the tz table database
+        a small list of USA cities from the tz table database.
 
     user:
       user_settings
         the collection of information pertaining a particular user
-        here we store his preferences for the availability query
+        here we store his preferences for the availability query.
+      
+      last_report
+        here, the user settings AND the processed information of LAST
+        CALL is stored. this is used for sending emails to the user with
+        the details of the event. 
 */
 
 function fetch_user_property(property_name){

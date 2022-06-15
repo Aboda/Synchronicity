@@ -2,186 +2,127 @@
   TODO: This function must create the totality of the cycle text output. 
 */
 function build_main_output(user_settings){
-  let cal_object = get_calendars()
-  user_settings.available_calendars = cal_object.names
-  let events_from_visible_calendars = check_calendars(
-    user_settings.date_frame.start,
-    user_settings.date_frame.end,
-    cal_object.calendars
-  )
-  user_settings.evaluated_events = Object.keys(events_from_visible_calendars).length
-  user_settings.events_from_visible_calendars = events_from_visible_calendars
-  let text_output = do_the_thing(events_from_visible_calendars,user_settings)
-  user_settings.output = text_output
+  let events_from_blocking_calendars = check_calendars(user_settings)
+  user_settings.evaluated_events = Object.keys(events_from_blocking_calendars).length
+  user_settings.events_from_blocking_calendars = events_from_blocking_calendars
+ 
+    /*
+      Bugfix 05/24/22
+      The offset application happens at
+        a) default state creation
+        and
+        b) at output creation time, this check
+
+      This is in order to fix a bug where if you select a timezone on the
+      settings section of the google calendar, this will shift the script
+      timezone to what you selected. 
+
+      This caused a conflict at output printout time, since calculations where
+      being done with browser local time and this could not properly pair up
+      with the calendar timezone.    
+  */
+  let tomorrow = what_day_is_tomorrow(user_settings)
+  if (user_settings.date_frame.start > user_settings.date_frame.end || 
+    user_settings.date_frame.start < tomorrow) {
+      default_state_date_frame(user_settings)
+    save_user_property("user_settings",user_settings)
+  }  
+  do_the_thing(events_from_blocking_calendars,user_settings)
   save_user_property("last_report",user_settings)
-  return CardService.newTextParagraph().setText(text_output)
+  return CardService.newTextParagraph().setText(user_settings.output)
 }
 
-/*
-    This function extracts key information from the available calendars
-    in the user profile, from what has been observed, we might make this an
-    automated call at query execution so that only the visible calendars are
-    considered as blocking 03/08/2022
-*/
-function get_calendars(){
-    let calendars = CalendarApp.getAllCalendars()
-    let processed = {
-      "names":{
-        "hidden":{},
-        "visible":{}
-      },
-      "calendars":[]
+function update_available_calendars(user_settings){
+  let cal_array = CalendarApp.getAllCalendars()
+  let available_calendars = {}
+  for (let cals of cal_array) {
+    available_calendars[cals.getId()] = cals
+  }
+  /*
+    Upon first start or memory reset, the only email considered / requested is
+    the user one
+  */
+  if (user_settings.blocking_calendars == undefined){
+    user_settings.blocking_calendars = {[user_settings.email]:{"blocking":true,"name":user_settings.email}}
+
+    /*
+      In the following scenarios, if there are existing items in both the 
+      blocking list and the available list, these are ignored
+    */
+  }else{
+    /*remove inaccesible elements from the blocking list*/
+    for(let bcal in user_settings.blocking_calendars){
+      if (available_calendars[bcal] == undefined) {
+        delete user_settings.blocking_calendars[bcal]
+      }
     }
-    for (let calendar of calendars){
-        if (!calendar.isHidden()) {
-            processed.calendars[calendar.getId()] = calendar
-            processed.names.visible[calendar.getId()] = calendar.getName()
-            /*
 
-            informational 
-
-            {
-              "id":calendar.getId(),
-              "name":calendar.getName(),
-              "tz":calendar.getTimeZone(),
-              "hidden":calendar.isHidden(),
-              "owned":calendar.isOwnedByMe(),
-              "selected":calendar.isSelected(),
-              "primary":calendar.isMyPrimaryCalendar()
-            }
-            */
-        }else{
-          processed.names.hidden[calendar.getId()] = calendar.getName()
+    /*add new accesible elements to the blocking initialized as false*/
+    for(let bcal in available_calendars){
+      if (user_settings.blocking_calendars[bcal] == undefined) {
+        user_settings.blocking_calendars[bcal] = {
+          "blocking":false,
+          "name":available_calendars[bcal].getName()
         }
+      }
     }
-    return processed
-}
-
-function check_calendars(start_date,end_date,cal_object) {
-  try{
-    let reminder = {}
-    for (let cal_id in cal_object) {
-    let cal = cal_object[cal_id]
-    let events_in_range = cal.getEvents(start_date,end_date)
-      for (let events of events_in_range) {
-        reminder[events.getId()] = {
-          "calendar":cal.getName(),
-          "c_id":cal.getId(),
-          "title":events.getTitle(),
-          "startTime":events.getStartTime(),
-          "endTime":events.getEndTime(),
-          "status":""+events.getMyStatus()
-        }
-      }    
-    }
-
-    return reminder
-
-  }catch(err){
-      console.log("check:calendars error",{err})
   }
 }
-/*
-    This function is to control time
-*/
-function ohm(user_settings){
-  my_clock = {}
-  my_clock.now = new Date()
-  my_clock.now_as_ms = my_clock.now.getTime()
-  my_clock.locale = my_clock.now.toLocaleString()
-  my_clock.now_in_utc = my_clock.now.toUTCString()
-  my_clock.today_short = user_settings.weekdays[my_clock.now.getDay()]
-  my_clock.local_offset = my_clock.now.getTimezoneOffset() / 60 * -1
-  my_clock.target_offset = user_settings.appropiate_offset
-  my_clock.offset_distance = my_clock.local_offset - my_clock.target_offset
-  my_clock.offset_as_ms = my_clock.offset_distance * 60 * 60 * 1000
-  my_clock.now_as_there = new Date(my_clock.now_as_ms - my_clock.offset_as_ms)
-  return my_clock
-}
 
+function check_calendars(user_settings) {
+  try{
+    let start_date = user_settings.date_frame.start
+    let end_date = user_settings.date_frame.end
+    let blocking_calendars = user_settings.blocking_calendars
+    let cal_object = CalendarApp.getAllCalendars()
+    let reminder = {}
+    for (let cal of cal_object) {
+      if (blocking_calendars[cal.getId()].blocking){
+        let events_in_range = cal.getEvents(start_date,end_date)
+        for (let events of events_in_range) {
+          reminder[events.getId()] = {
+            "calendar":cal.getName(),
+            "c_id":cal.getId(),
+            "timezone":cal.getTimeZone(),
+            "title":events.getTitle(),
+            "startTime":events.getStartTime(),
+            "endTime":events.getEndTime(),
+            "status":""+events.getMyStatus()
+          }
+        }
+      }   
+    }
+    return reminder
+  }catch(err){
+      throw err
+  }
+}
 
 /*
     This is the core availability calculator, takes the events
     from the visible calendars and compares against filters to create the text output
 */
-
-function do_the_thing(events_from_visible_calendars,user_settings){
-    
+function do_the_thing(events_from_blocking_calendars,user_settings){
   /*
-    Step 0:
-      It is all about time, this function controls it
+    Step 1: assert the dates that will be evaluated
   */
-  let my_clock = ohm(user_settings)
-  
-  /*
-    Step 1:
-      Calculate the dates that are being requested
-      these are calculated from local time, offset is applied
-      only on output
-  */
-  let tomorrow = what_day_is_tomorrow()
-  if (user_settings.date_frame.start > user_settings.date_frame.end || 
-    user_settings.date_frame.start < tomorrow) {
-    user_settings.date_frame.start = tomorrow,
-    user_settings.date_frame.end = what_day_is_a_week_from_tomorrow()
-    save_user_property("user_settings",user_settings)
-  }
+  main_process_date_array(user_settings)
 
-  let start_date = user_settings.date_frame.start
-  let end_date = user_settings.date_frame.end
-
-  let limit = 30
-  let progressor = 0
-  let date_array = []
-
-  while (progressor < limit) {
-      let tomorrows = new Date(start_date.getTime() + (get_a_day_in_ms() * (progressor)))
-      if (tomorrows.getTime() < end_date.getTime()) {
-        let evd_short = user_settings.weekdays[tomorrows.getDay()]
-        if (user_settings.dotw[evd_short] == true){
-          date_array.push(tomorrows)  
-        }          
-      }else{
-          break
-      }
-      progressor++
-  }
-
-  let eval_date_number = date_array.length
-  user_settings.number_of_days = eval_date_number
-  user_settings.date_array = date_array
   /*
     Step 2:
       for each date, we will derive a timeframe to compare,
       this is controlled by the appropiate filter in settings
   */
-  let specific_timeframe_array = []
-  let start_hour = user_settings.hour_frame.start.hours
-  let start_minute = user_settings.hour_frame.start.minutes
-  let end_hour = user_settings.hour_frame.end.hours
-  let end_minute = user_settings.hour_frame.end.minutes 
-  let start_miliseconds = (start_hour * 60 * 60 * 1000)+(start_minute * 60 * 1000)
-  let end_miliseconds = (end_hour * 60 * 60 * 1000)+(end_minute * 60 * 1000)
-  for (let dates of date_array) {
-    specific_timeframe_array.push([dates.getTime()+start_miliseconds,dates.getTime()+end_miliseconds])
-  }
-  user_settings.specific_timeframe_array = specific_timeframe_array
+  main_process_specific_timeframe_array(user_settings)
+
 
   /*
     Step 3:
       Now we will create a final array that will hold an array
       per entry with the length of the evaluated timeframe
   */
-  let slotted_timeframe_array = []
-  let sought_timeframe = ((end_miliseconds - start_miliseconds) / 1000) / 60
-  for (let j = 0; j < eval_date_number ; j++) {
-    let truearray = []
-    for (let k = 0; k < sought_timeframe; k++){
-      truearray.push(true)
-    }
-    slotted_timeframe_array.push(truearray)
-  }
-  user_settings.slotted_timeframe_array = slotted_timeframe_array
+  main_process_slotted_timeframe_array(user_settings)
+  
   /*
     Step 4:
       now we can run the cycle for each required day!
@@ -207,19 +148,21 @@ function do_the_thing(events_from_visible_calendars,user_settings){
     First main cycle, iterates over the selected dates
     !!!all evaluations are performed within this array!!!
   */
-  for (var i = 0 ; i < eval_date_number ; i++) {
-    let date = date_array[i]
-    let offset_date = new Date(date.getTime() + my_clock.offset_as_ms)
-    let spef_tf = specific_timeframe_array[i]
-    let slot_tf = slotted_timeframe_array[i]
-    let dt = user_settings.weekdays[offset_date.getDay()] + " " + (offset_date.getMonth()+1) + "/" + offset_date.getDate()
+  user_settings.report = []
+  for (var i = 0 ; i < user_settings.number_of_days ; i++) {
+    let od = offset_date(user_settings.date_array[i], user_settings.offset_as_ms)
+    let spef_tf = user_settings.specific_timeframe_array[i]
+    let slot_tf = user_settings.slotted_timeframe_array[i]
+    let dt = user_settings.weekdays[od.getDay()] + " " + (od.getMonth()+1) + "/" + od.getDate()
     to = to + dt
+
+    user_settings.report.push([user_settings.date_array[i],od])
     /*
       Second and pontentially most expensive loop under an scenario of too many events
     */
     let matched_events = 0
-    for (let event_id in events_from_visible_calendars) {
-      let events = events_from_visible_calendars[event_id]
+    for (let event_id in events_from_blocking_calendars) {
+      let events = events_from_blocking_calendars[event_id]
       /*
         This checks that the status of the calendar in blocking events is true
         if so, it proceeds, else it skips
@@ -268,8 +211,7 @@ function do_the_thing(events_from_visible_calendars,user_settings){
       Finally we run over the minute memory array to find the adjacent blocks
       that add up to the required meeting time
     */
-    let desired_meeting_duration = (user_settings.duration.hours * 60) + user_settings.duration.minutes
-    let desired_timezone = user_settings.appropiate_offset
+    let desired_meeting_duration = user_settings.duration
     let last_start_index = 0
     let progress_counter = 0
     let action_index = 0
@@ -300,13 +242,13 @@ function do_the_thing(events_from_visible_calendars,user_settings){
               close)
             */
             assembled_packs++
-            to = to + write_available_timeframe(spef_tf[0],last_start_index,action_index + 1,action_index,false,my_clock)
+            to = to + write_available_timeframe(spef_tf[0],last_start_index,action_index + 1,action_index,false,user_settings)
         }          
       }else{
         /*check if accumulated progress satisfies minimum desired minutes*/
         if (progress_counter >= desired_meeting_duration) {
             assembled_packs++
-            to = to + write_available_timeframe(spef_tf[0],last_start_index,action_index,action_index,false,my_clock)
+            to = to + write_available_timeframe(spef_tf[0],last_start_index,action_index,action_index,false,user_settings)
             last_start_index = action_index
         }
         /*slot is unavailable*/
@@ -314,18 +256,21 @@ function do_the_thing(events_from_visible_calendars,user_settings){
       }   
       action_index++
     }
-        /*
-    if (ao.flow.show_utc === true) {
-      to = to +" "+desired_timezone  
-    }
-
-    if (ao.flow.append_to_output !== "") {
-      to = to +" "+ao.flow.append_to_output
-    }
-    */
     to = to + "\n"
   }
-  return to
+  to = to + `
+  Browser Offset:${local_utc_offset()}
+
+  Script Timezone:${user_settings.script_user_timezone}
+  Script Offset:${user_settings.script_user_offset}
+  Difference:${user_settings.script_offset_distance}
+
+  Output Timezone:${user_settings.target_timezone}
+  Output Offset:${user_settings.target_offset}
+  Difference:${user_settings.offset_distance}
+  `
+
+  user_settings.output = to
 }
 
 function write_available_timeframe(
@@ -334,15 +279,14 @@ function write_available_timeframe(
   index_of_availability_end,
   current_index,
   close,
-  my_clock){
+  user_settings){
       /*
         This is where we will implement the timezone changer. 
       */
 
     /*target output of this section looks like "3:30p - 4p, 4:30p - 5p" */
-    let modifier = my_clock.offset_as_ms
-    let proposed_start_time = new Date(timeframe_epoch_start + modifier + (index_of_availability_start * 60000))
-    let proposed_end_time = new Date(timeframe_epoch_start + modifier + (index_of_availability_end * 60000))
+    let proposed_start_time = new Date(timeframe_epoch_start -  user_settings.offset_as_ms + (index_of_availability_start * 60000))
+    let proposed_end_time = new Date(timeframe_epoch_start - user_settings.offset_as_ms + (index_of_availability_end * 60000))
     let p_start_hours = proposed_start_time.getHours()
     let p_start_minutes = proposed_start_time.getMinutes()
     let p_end_hours = proposed_end_time.getHours()
@@ -427,4 +371,83 @@ function tag_pre_start (array_to_tag,array_moment_0,epoch_end){
   for (let i = 0;i < number_of_blocks && i < sought_size; i++) {
     array_to_tag[i] = false
   }
+}
+
+/*
+  Date Array constructor:
+
+  This is the base for the rest of the calculations
+  It creates an array with a number of dates equal to the difference between
+  start deate and end date. 
+*/
+
+function main_process_date_array(user_settings){
+  let date_array = []
+  let day_array = []
+
+  let start_date = user_settings.date_frame.start
+  let end_date = user_settings.date_frame.end
+
+  let limit = 30
+  let progressor = 0
+
+  while (progressor < limit) {
+    let tomorrows = new Date(start_date.getTime() + (get_a_day_in_ms() * (progressor)))
+    if (tomorrows.getTime() < end_date.getTime()) {
+      let clock_shifted_tomorrow = offset_date(tomorrows,user_settings.script_offset_as_ms)
+      let evd_short = user_settings.weekdays[clock_shifted_tomorrow.getDay()]
+      day_array.push([evd_short,user_settings.dotw[evd_short]])
+      if (user_settings.dotw[evd_short]){
+        date_array.push(tomorrows)  
+      }        
+    }else{
+        break
+    }
+    progressor++
+  }
+  user_settings.date_range = progressor
+  user_settings.number_of_days = date_array.length
+  user_settings.date_array = date_array
+  user_settings.day_array = day_array
+}
+
+/*
+  Specific Timeframe Array Constructor
+  This is an array that adds to the times set at 0 hours of the date_array to
+  the desired start and end service hours.
+*/
+function main_process_specific_timeframe_array(user_settings){
+  let specific_timeframe_array = []
+  let start_hour = user_settings.hour_frame.start.hours
+  let start_minute = user_settings.hour_frame.start.minutes
+  let end_hour = user_settings.hour_frame.end.hours
+  let end_minute = user_settings.hour_frame.end.minutes 
+  let start_miliseconds = (start_hour * 60 * 60 * 1000)+(start_minute * 60 * 1000)
+  let end_miliseconds = (end_hour * 60 * 60 * 1000)+(end_minute * 60 * 1000)
+  for (let dates of user_settings.date_array) {
+    specific_timeframe_array.push([dates.getTime()+start_miliseconds,dates.getTime()+end_miliseconds])
+  }
+  user_settings.specific_timeframe_array = specific_timeframe_array
+  user_settings.start_miliseconds = start_miliseconds
+  user_settings.end_miliseconds = end_miliseconds
+}
+
+/*
+  Slotted Timeframe Array Constructor
+  This function returns a boolean array with one slot per minute in the
+  evaluated timeframe. 
+  It is used by the algorithm to tag the timeframes in which there are blocking
+  events and to later create the available time packages. 
+*/
+function main_process_slotted_timeframe_array(user_settings){
+  let slotted_timeframe_array = []
+  let sought_timeframe = ((user_settings.end_miliseconds - user_settings.start_miliseconds) / 1000) / 60
+  for (let j = 0; j < user_settings.number_of_days ; j++) {
+    let truearray = []
+    for (let k = 0; k < sought_timeframe; k++){
+      truearray.push(true)
+    }
+    slotted_timeframe_array.push(truearray)
+  }
+  user_settings.slotted_timeframe_array = slotted_timeframe_array
 }
